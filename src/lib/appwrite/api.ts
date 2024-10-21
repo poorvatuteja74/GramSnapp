@@ -1,7 +1,8 @@
 import { ID, Query } from "appwrite";
 
 import { appwriteConfig, account, databases, storage, avatars } from "./config";
-import { IUpdatePost, INewPost, INewUser, IUpdateUser } from "../../types"
+import { IUpdatePost, INewPost, INewUser, IUpdateUser } from "../../types";
+import { URL } from "node:url";
 
 // ============================================================
 // AUTH
@@ -41,7 +42,7 @@ export async function saveUserToDB(user: {
   accountId: string;
   email: string;
   name: string;
-  imageUrl: string;
+  imageUrl: string;  // Change this line
   username?: string;
 }) {
   try {
@@ -76,7 +77,8 @@ export async function getAccount() {
 
     return currentAccount;
   } catch (error) {
-    console.log(error);
+    console.error('Error fetching account:', error);
+    throw error;
   }
 }
 
@@ -85,7 +87,9 @@ export async function getCurrentUser() {
   try {
     const currentAccount = await getAccount();
 
-    if (!currentAccount) throw Error;
+    if (!currentAccount) {
+      throw new Error("No account found");
+    }
 
     const currentUser = await databases.listDocuments(
       appwriteConfig.databaseId,
@@ -93,14 +97,17 @@ export async function getCurrentUser() {
       [Query.equal("accountId", currentAccount.$id)]
     );
 
-    if (!currentUser) throw Error;
+    if (!currentUser.documents.length) {
+      throw new Error("User not found in database");
+    }
 
     return currentUser.documents[0];
   } catch (error) {
-    console.log(error);
+    console.error('Error fetching user:', error); // Log the error with more context
     return null;
   }
 }
+
 
 // // ============================== SIGN OUT
 // export async function signOutAccount() {
